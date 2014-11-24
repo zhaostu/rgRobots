@@ -44,11 +44,11 @@ class Robot(object):
         r = game.robots.get(loc)
         if r is not None:
             if r.player_id != self.player_id:
-                score += ATTACK_DAMAGE / 2.0
+                score += ATTACK_DAMAGE
 
         for r in self.adjacent_robots(loc, game):
             if r.player_id != self.player_id:
-                score += ATTACK_DAMAGE / 2.0
+                score += ATTACK_DAMAGE / 3.01
         return score + self.strategy_tweak(self.location, game)
 
     def eval_guard(self, game):
