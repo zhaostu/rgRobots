@@ -30,7 +30,9 @@ class Robot:
             elif score == best_score:
                 best_actions.append(action)
 
-        return random.choice(best_actions)
+        action = random.choice(best_actions)
+        current_actions[self.location] = action
+        return action
 
     def gen_actions(self):
         ''' A generator that gens all valid moves and its score. '''
@@ -42,7 +44,7 @@ class Robot:
         yield (['suicide'], self.eval_suicide())
 
     def eval_move(self, loc):
-        score = self.eval_square(loc)
+        score = self.eval_square(loc, move=True)
         return score + self.strategy_tweak(loc)
 
     def eval_attack(self, loc):
@@ -53,27 +55,27 @@ class Robot:
             if r.player_id != self.player_id:
                 score += ATTACK_DAMAGE
 
-        for r in self.adjacent_robots(loc):
+        for l, r in self.adjacent_robots(loc):
             if r.player_id != self.player_id:
                 score += ATTACK_DAMAGE / 3.01
         return score + self.strategy_tweak(self.location)
 
     def eval_guard(self):
         score = self.eval_square(self.location)
-        if score != TERRIBLE:
+        if score > TERRIBLE:
             score /= 2.0
 
         return score + self.strategy_tweak(self.location)
 
     def eval_suicide(self):
         score = -self.hp
-        for r in self.adjacent_robots(self.location):
+        for l, r in self.adjacent_robots(self.location):
             if r.player_id != self.player_id:
                 score += min(r.hp, SUICIDE_DAMAGE) / 2.0
 
         return score
 
-    def eval_square(self, loc):
+    def eval_square(self, loc, move=False):
         score = 0
         # Terrible if there will be spawn next round.
         if "spawn" in rg.loc_types(loc):
@@ -83,21 +85,21 @@ class Robot:
             else:
                 score -= ENCOURAGE * next_spawn
 
-        # TODO: check whether any ally robots is going to move/leave there.
-        # If any robot is already there.
-        r = self.game.robots.get(loc)
-        if r is not None and r.get('robot_id') != self.robot_id:
-            if r.player_id != self.player_id:
-                score -= ATTACK_DAMAGE
-            else:
-                score -= COLLISION_DAMAGE
+        if move:
+            r = self.game.robots.get(loc)
+            if r is not None and r.get('robot_id') != self.robot_id:
+                if r.player_id != self.player_id:
+                    score -= ATTACK_DAMAGE
+                elif loc in current_actions and current_actions[loc][0] != 'move':
+                    score = TERRIBLE
 
-        # If any robot is next to it.
-        for r in self.adjacent_robots(loc):
-            if r.player_id != self.player_id:
-                score -= ATTACK_DAMAGE
-            else:
-                score -= COLLISION_DAMAGE
+            # If any robot is next to it.
+            for l, r in self.adjacent_robots(loc):
+                if r.player_id != self.player_id:
+                    score -= ATTACK_DAMAGE
+                elif l in current_actions and current_actions[l][0] == 'move' \
+                        and current_actions[l][1] == loc:
+                    score = TERRIBLE
 
         return score
 
@@ -118,4 +120,4 @@ class Robot:
         for l in rg.locs_around(loc, filter_out=NOT_ALLOWED):
             r = self.game.robots.get(l)
             if r is not None and r.get('robot_id') != self.robot_id:
-                yield r
+                yield l, r
