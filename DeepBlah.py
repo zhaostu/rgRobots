@@ -12,7 +12,7 @@ SUICIDE_DAMAGE = rg.settings.suicide_damage
 current_actions = {}
 current_turn = 0
 
-class Robot:
+class Robot(object):
     game = None
     def act(self, game):
         self.game = game
@@ -54,6 +54,8 @@ class Robot:
         if r is not None:
             if r.player_id != self.player_id:
                 score += ATTACK_DAMAGE
+            else:
+                return TERRIBLE
 
         for l, r in self.adjacent_robots(loc):
             if r.player_id != self.player_id:
@@ -91,7 +93,7 @@ class Robot:
                 if r.player_id != self.player_id:
                     score -= ATTACK_DAMAGE
                 elif loc not in current_actions or current_actions[loc][0] == 'move':
-                    score = TERRIBLE
+                    return TERRIBLE
 
             # If any robot is next to it.
             for l, r in self.adjacent_robots(loc):
@@ -99,7 +101,7 @@ class Robot:
                     score -= ATTACK_DAMAGE
                 elif l in current_actions and current_actions[l][0] == 'move' \
                         and current_actions[l][1] == loc:
-                    score = TERRIBLE
+                    return TERRIBLE
 
         return score
 
