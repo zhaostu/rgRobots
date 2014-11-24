@@ -37,11 +37,11 @@ class Robot:
     def gen_actions(self):
         ''' A generator that gens all valid moves and its score. '''
         for loc in rg.locs_around(self.location, filter_out=NOT_ALLOWED):
-            yield (['move', loc], self.eval_move(loc))
-            yield (['attack', loc], self.eval_attack(loc))
+            yield (('move', loc), self.eval_move(loc))
+            yield (('attack', loc), self.eval_attack(loc))
 
-        yield (['guard'], self.eval_guard())
-        yield (['suicide'], self.eval_suicide())
+        yield (('guard',), self.eval_guard())
+        yield (('suicide',), self.eval_suicide())
 
     def eval_move(self, loc):
         score = self.eval_square(loc, move=True)
@@ -90,7 +90,7 @@ class Robot:
             if r is not None and r.get('robot_id') != self.robot_id:
                 if r.player_id != self.player_id:
                     score -= ATTACK_DAMAGE
-                elif loc in current_actions and current_actions[loc][0] != 'move':
+                elif loc not in current_actions or current_actions[loc][0] == 'move':
                     score = TERRIBLE
 
             # If any robot is next to it.
