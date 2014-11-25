@@ -129,8 +129,8 @@ class Robot(object):
 
     def strategy_tweak(self, loc):
         tweak = 0
-        # Better to be close to the center.
-        tweak -= rg.wdist(loc, rg.CENTER_POINT) * ENCOURAGE
+        # Better to be at a certain distance from the center.
+        tweak -= abs(rg.wdist(loc, rg.CENTER_POINT) - 6) * ENCOURAGE
 
         # TODO: Better to be close to allies.
         return tweak
