@@ -9,6 +9,28 @@ COLLISION_DAMAGE = rg.settings.collision_damage
 ATTACK_DAMAGE = sum(rg.settings.attack_range) / 2.0
 SUICIDE_DAMAGE = rg.settings.suicide_damage
 
+# Use DFS to find distance to get out of spawn for each spawn point.
+SPAWN_COORDS = {}
+
+def distance_out(loc):
+    if loc in SPAWN_COORDS:
+        return SPAWN_COORDS[loc]
+
+    SPAWN_COORDS[loc] = dist = 99
+
+    for l in rg.locs_around(loc, filter_out=NOT_ALLOWED):
+        if l not in rg.settings.spawn_coords:
+            SPAWN_COORDS[loc] = 1
+            return 1
+        else:
+            dist = min(dist, distance_out(l) + 1)
+
+    SPAWN_COORDS[loc] = dist
+    return dist
+
+for loc in rg.settings.spawn_coords:
+    distance_out(loc)
+
 current_actions = {}
 current_turn = 0
 
@@ -79,13 +101,13 @@ class Robot(object):
 
     def eval_square(self, loc, move=False):
         score = 0
-        # Terrible if there will be spawn next round.
-        if "spawn" in rg.loc_types(loc):
+        # Terrible if we will not be able to escape out of spawn.
+        if loc in SPAWN_COORDS:
             next_spawn = self.next_spawn()
-            if next_spawn == 0:
+            if next_spawn <= SPAWN_COORDS[loc]:
                 return TERRIBLE
             else:
-                score -= ENCOURAGE * next_spawn
+                score -= ENCOURAGE * SPAWN_COORDS[loc]
 
         if move:
             r = self.game.robots.get(loc)
@@ -114,7 +136,7 @@ class Robot(object):
         return tweak
 
     def next_spawn(self):
-        return self.game.turn % rg.settings.spawn_every
+        return rg.settings.spawn_every - self.game.turn % rg.settings.spawn_every
 
     def adjacent_robots(self, loc):
         ''' A generator that returns all robots adjacent to the location that
