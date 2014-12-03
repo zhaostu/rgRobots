@@ -53,10 +53,16 @@ class Evaluation(object):
             return -1 if self_die else 1
 
         if self.kills_made != other.kills_made:
-            return self.kills_made - other.kills_made
+            return 1 if self.kills_made > other.kills_made else -1
 
-        self_damage_diff = self.damage_made - self.damage_taken
-        other_damage_diff = other.damage_made - other.damage_taken
+        self_damage_diff = self.damage_made
+        if not self_die:
+            self_damage_diff -= self.damage_taken
+
+        other_damage_diff = other.damage_made
+        if not other_die:
+            other_damage_diff -= other.damage_taken
+
         if self_damage_diff != other_damage_diff:
             return self_damage_diff - other_damage_diff
 
@@ -72,7 +78,6 @@ class Evaluation(object):
                 self.damage_made,
                 self.damage_taken,
                 self.tweak)
-
 class Robot(object):
     game = None
     def act(self, game):
@@ -151,6 +156,8 @@ class Robot(object):
                     score.kills_made += 1
                 else:
                     score.damage_made += SUICIDE_DAMAGE
+
+        score.tweak = -100
 
         return score
 
